@@ -1,0 +1,170 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  name        String       @default("لا يوجد اسم")
+  email       String       @unique
+  password    String
+  image       String       @default("none")
+  address     String       @default("none")
+  phoneNumber Int          @default(0)
+  createdAt   DateTime     @default(now())
+  numOfOrders Int?         @default(0)
+  balance     Int?         @default(0)
+  points      Int?         @default(0)
+  notes       String?      @default("none")
+  description String       @default("none")
+  role        Role         @default(MEMBER)
+  orders      Order[]
+  Restaurant  Restaurant[]
+  Review      Review[]
+}
+
+model Restaurant {
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
+  name         String         @default("none")
+  email        String         @default("none")
+  owner        User           @relation(fields: [ownerId], references: [id])
+  ownerId      String         @db.ObjectId
+  image        String         @default("none")
+  phoneNumbers String[]       @default([])
+  address      String         @default("none")
+  latitude     Float          @default(0)
+  longitude    Float          @default(0)
+  description  String         @default("none")
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now())
+  menuItems    MenuItem[]
+  deliveryFee  Int            @default(0)
+  rate         Float          @default(0)
+  status       String         @default("inactive")
+  discounts    Discount[]
+  orders       Order[]
+  categories   Category[]
+  workingHours WorkingHours[]
+  Review       Review[]
+}
+
+model Review {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  user         User       @relation(fields: [userId], references: [id])
+  userId       String     @db.ObjectId
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurantId String     @db.ObjectId
+  rate         Float      @default(0)
+  comment      String     @default("none")
+  createdAt    DateTime   @default(now())
+}
+
+model WorkingHours {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  day          DayOfWeek
+  openTime     String // You can use a string to store opening time (e.g., "09:00 AM")
+  closeTime    String // You can use a string to store closing time (e.g., "08:00 PM")
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurantId String     @db.ObjectId
+}
+
+model Discount {
+  id           String       @id @default(auto()) @map("_id") @db.ObjectId
+  name         String       @default("none")
+  description  String       @default("none")
+  discount     Int          @default(0)
+  type         DiscountType
+  restaurant   Restaurant   @relation(fields: [restaurantId], references: [id])
+  restaurantId String       @db.ObjectId
+  menuItem     MenuItem     @relation(fields: [menuItemId], references: [id])
+  menuItemId   String       @db.ObjectId
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @default(now())
+}
+
+model Order {
+  id           String      @id @default(auto()) @map("_id") @db.ObjectId
+  user         User        @relation(fields: [userId], references: [id])
+  userId       String      @db.ObjectId
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  restaurantId String      @db.ObjectId
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @default(now())
+  status       OrderStatus @default(PENDING)
+  totalPrice   Int         @default(0)
+  deliveryFee  Int         @default(0)
+  discount     Int         @default(0)
+  total        Int         @default(0)
+  menuItems    MenuItem[]  @relation(fields: [menuItemsIds], references: [id])
+  menuItemsIds String[]    @default([]) @db.ObjectId
+}
+
+model MenuItem {
+  id            String     @id @default(auto()) @map("_id") @db.ObjectId
+  name          String     @default("none")
+  description   String     @default("none")
+  price         Int        @default(0)
+  image         String     @default("none")
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurantId  String     @db.ObjectId
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @default(now())
+  discounts     Discount[]
+  visible       Boolean    @default(false)
+  categories    Category[] @relation(fields: [categoriesIds], references: [id])
+  categoriesIds String[]   @default([]) @db.ObjectId
+  orders        Order[]    @relation(fields: [ordersIds], references: [id])
+  ordersIds     String[]   @default([]) @db.ObjectId
+}
+
+model Category {
+  id           String      @id @default(auto()) @map("_id") @db.ObjectId
+  name         String      @default("none")
+  description  String      @default("none")
+  image        String      @default("none")
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @default(now())
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+  restaurantId String?     @db.ObjectId
+  menuItems    MenuItem[]  @relation(fields: [menuItemsIds], references: [id])
+  menuItemsIds String[]    @default([]) @db.ObjectId
+}
+
+enum Role {
+  MEMBER
+  RESTAURANT_ADMIN
+  DELIVERY
+  MODERATOR
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  ON_THE_WAY
+  DELIVERED
+  CANCELED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}

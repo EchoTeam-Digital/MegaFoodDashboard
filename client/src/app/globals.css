@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* Add this to your CSS */
+.p-float-label:enabled:focus .p-chips:enabled:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 0.2rem rgba(255, 0, 0, 0.377) !important;
+    /* Add any additional styling you want for the focused state */
+}
