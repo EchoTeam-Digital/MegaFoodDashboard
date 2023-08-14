@@ -190,7 +190,7 @@ const SideBar = ({ selectedIndex }: Props) => {
           </ul>
           <div className="flex flex-col items-center justify-center h-12 mt-auto">
             <span className="text-gray-400 dark:text-gray-500 text-sm">
-              Version: 1.0.0
+              Version: 0.0.2
             </span>
             <span className="text-gray-400 dark:text-gray-500 text-sm">
               By, Echo Team

@@ -4,6 +4,12 @@
 
 Welcome to the Restaurant and Orders Management Dashboard, a web application designed to streamline the management of restaurants and their orders. This project utilizes Next.js with TypeScript for the frontend and Express backend with Prisma for database interactions.
 
+add a version badge here
+
+[![Version](https://img.shields.io/badge/version-0.0.2-blue.svg)](https://github.com/your-username/restaurant-dashboard/releases/tag/v0.0.2)
+
+
+
 ## Table of Contents
 
 - [Introduction](#introduction)
@@ -37,7 +43,7 @@ The Restaurant and Orders Management Dashboard aims to simplify the process of m
 
 - Frontend: Next.js, TypeScript, React
 - Backend: Express.js, Prisma (ORM)
-- Database: PostgreSQL (You can specify the database you're using)
+- Database: MongoDB (You can specify the database you're using)
 - User Interface: HTML, CSS (styled-components or any other styling approach you used)
 - Authentication: JWT (JSON Web Tokens)
 
@@ -49,7 +55,7 @@ Follow these steps to get the project up and running on your local machine.
 
 - Node.js (v14 or higher)
 - npm or yarn package manager
-- PostgreSQL database instance
+- MongoDB database instance
 
 ### Installation
 
@@ -60,7 +66,7 @@ Follow these steps to get the project up and running on your local machine.
 
 2. Navigate to the project directory:
    ```
-   cd restaurant-dashboard
+   cd MegaFoodDashboard
    ```
 
 3. Install frontend and backend dependencies:
@@ -73,22 +79,16 @@ Follow these steps to get the project up and running on your local machine.
 
 ### Configuration
 
-1. Create a `.env` file in the `backend` directory and configure your database connection settings, JWT secret, etc. Example:
+1. Create a `.env` file in the `backend` directory and configure your database connection settings, etc. Example:
    ```env
    DATABASE_URL=your-database-url
    ```
 
 2. Run database migrations using Prisma:
-    if using mongodb:
-        ```
-        cd backend
-        npx prisma db push
-        ```
-    if using sql database
-        ```
-        cd backend
-        npx prisma migrate dev
-        ```
+    ```
+    cd backend
+    npx prisma migrate dev
+    ```
 
 ## Usage
 
@@ -114,7 +114,3 @@ Contributions are welcome! If you find any bugs or want to add new features, ple
 
 This project is licensed under the [MIT License](LICENSE).
 ```
-
-Remember to replace placeholders like `your-username`, `your-database-url`, and `your-secret-key` with actual values. Also, ensure that you have your project's logo hosted online and replace `link-to-your-logo.png` with the actual URL.
-
-Feel free to customize this README template further to suit your project's specific details and needs.

@@ -1,5 +1,7 @@
+import Restaurants from "./restaurantTypes";
+
 type User = {
-    id: number;
+    id: string;
     image: string;
     name: string;
     email: string;
@@ -10,4 +12,7 @@ type User = {
     address: string;
     notes: string;
     description: string;
+    Restaurant: Restaurants[];
 }
+
+export default User;

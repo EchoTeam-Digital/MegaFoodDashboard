@@ -25,10 +25,16 @@ import {
   DropdownItem,
   DropdownMenu,
   DropdownTrigger,
+  Textarea,
+  Switch,
 } from "@nextui-org/react";
 import NextImage from "next/image";
+import User from "../../../../../../types/usersTypes";
+import { useFilePicker } from "use-file-picker";
+import { useRouter } from "next/navigation";
 
 const EditRestaurant = ({ params }: { params: { slug: string } }) => {
+  const router = useRouter();
   const [restaurant, setRestaurant] = useState<Restaurants>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [ownerButtonLoading, setOwnerButtonLoading] = useState(false);
@@ -38,11 +44,13 @@ const EditRestaurant = ({ params }: { params: { slug: string } }) => {
     useState<boolean>(false);
   const [selectedPhone, setSelectedPhone] = useState<number>(0);
   const phoneNumberDisclosure = useDisclosure();
+  const deleteRestaurantDisclosure = useDisclosure();
   const [selectedOwnerKeys, setSelectedOwnerKeys] = React.useState(new Set([]));
   const selectedOwner = React.useMemo(
     () => Array.from(selectedOwnerKeys).join(", ").replaceAll("_", " "),
     [selectedOwnerKeys]
   );
+  const [saveButtonLoading, setSaveButtonLoading] = useState(false);
 
   const changeRestaurantValue = (valueName: string, value: any) => {
     setRestaurant({
@@ -50,6 +58,17 @@ const EditRestaurant = ({ params }: { params: { slug: string } }) => {
       [valueName]: value,
     });
   };
+
+  const [openFileSelector] = useFilePicker({
+    readAs: "DataURL",
+    accept: "image/*",
+    multiple: false,
+    limitFilesConfig: { max: 1 },
+    maxFileSize: 50,
+    onFilesSelected: (file) => {
+      changeRestaurantValue("image", file.filesContent[0].content);
+    },
+  });
 
   useEffect(() => {
     if (params.slug) {
@@ -95,6 +114,39 @@ const EditRestaurant = ({ params }: { params: { slug: string } }) => {
       .finally(() => {
         setSelectedOwnerKeys(new Set([restaurant.owner.id]));
         setOwnerButtonLoading(false);
+      });
+  };
+
+  const saveRestaurant = async () => {
+    const restaurantData = {
+      name: restaurant.name,
+      email: restaurant.email,
+      address: restaurant.address,
+      description: restaurant.description,
+      deliveryFee: Number.parseInt(restaurant.deliveryFee.toString()),
+      phoneNumbers: restaurant.phoneNumbers,
+      ownerId: restaurant.owner.id,
+      image: restaurant.image,
+      status: restaurant.status,
+    };
+    await axios
+      .post(
+        `http://localhost:5020/restaurants/edit/${params.slug}`,
+        restaurantData
+      )
+      .then((res) => {
+        if (res.status !== 200) {
+          console.log("Error, status code: ", res.status);
+          setError(true);
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+        setError(true);
+      })
+      .finally(() => {
+        changeRestaurantValue("updatedAt", new Date().toISOString());
+        setSaveButtonLoading(false);
       });
   };
 
@@ -280,6 +332,60 @@ const EditRestaurant = ({ params }: { params: { slug: string } }) => {
     );
   };
 
+  const DeleteRestaurnat = async () => {
+    await axios
+      .delete(`http://localhost:5020/restaurants/delete/${params.slug}`)
+      .then((res) => {
+        if (res.status !== 200) {
+          console.log("Error, status code: ", res.status);
+          setError(true);
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+        setError(true);
+      })
+      .finally(() => {
+        deleteRestaurantDisclosure.onClose();
+        router.push("/dashboard/restaurants");
+      });
+  };
+
+  const confirmRestaurantDelete = () => {
+    return (
+      <Modal
+        isOpen={deleteRestaurantDisclosure.isOpen}
+        onOpenChange={deleteRestaurantDisclosure.onOpenChange}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                تأكيد الحذف
+              </ModalHeader>
+              <ModalBody>
+                <p>هل أنت متأكد من حذف المطعم </p>
+              </ModalBody>
+              <ModalFooter>
+                <Button color="danger" variant="light" onClick={onClose}>
+                  إلغاء
+                </Button>
+                <Button
+                  color="primary"
+                  onPress={() => {
+                    DeleteRestaurnat();
+                  }}
+                >
+                  نعم
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+    );
+  };
+
   const addPhoneNumber = (phoneNumber: number) => {
     if (!phoneNumber) {
       return;
@@ -337,7 +443,7 @@ const EditRestaurant = ({ params }: { params: { slug: string } }) => {
           <Input
             type="text"
             variant="bordered"
-            label="Add New Phone Number"
+            label="أضف رقم هاتف جديد"
             onChange={(e) => setSelectedPhone(e.target.value)}
           />
           <Button
@@ -409,6 +515,17 @@ const EditRestaurant = ({ params }: { params: { slug: string } }) => {
   };
 
   const chooseOwner = () => {
+    const getUserRestaurant = (user: User) => {
+      if (user.Restaurant != undefined) {
+        const restaurants = user.Restaurant.map(
+          (restaurant) => restaurant.name
+        );
+        return restaurants.join(", ");
+      } else {
+        return "لا يوجد مطاعم";
+      }
+    };
+
     return (
       <Dropdown>
         <DropdownTrigger>
@@ -432,8 +549,41 @@ const EditRestaurant = ({ params }: { params: { slug: string } }) => {
           disallowEmptySelection
           selectionMode="single"
           selectedKeys={selectedOwnerKeys}
-          onSelectionChange={setSelectedOwnerKeys}
+          onSelectionChange={(keys) => {
+            setSelectedOwnerKeys(keys);
+            const fitlredKey = Array.from(new Set(keys))
+              .join(", ")
+              .replaceAll("_", " ");
+            changeRestaurantValue(
+              "owner",
+              users.find((user) => user.id === fitlredKey)
+            );
+          }}
         >
+          <DropdownItem
+            className="flex items-center justify-center"
+            isReadOnly
+            key="search"
+          >
+            <Input
+              type="text"
+              variant="bordered"
+              placeholder="بحث بالإسم أو أي دي"
+              className="w-full"
+              onValueChange={(value) => {
+                if (value) {
+                  // search with id or name
+                  const filteredUsers = users.filter(
+                    (user) =>
+                      user.id.includes(value) || user.name.includes(value)
+                  );
+                  setUsers(filteredUsers);
+                } else {
+                  fetchUsers();
+                }
+              }}
+            />
+          </DropdownItem>
           {users && users.length > 0 ? (
             users.map((user) => (
               <DropdownItem key={user.id}>
@@ -442,9 +592,13 @@ const EditRestaurant = ({ params }: { params: { slug: string } }) => {
                   <div className="flex flex-col items-start justify-center">
                     <h4 className="text-small font-semibold leading-none text-default-600">
                       {user.name}
+                      {user.Restaurant.email}
                     </h4>
                     <h5 className="text-small tracking-tight text-default-500">
                       {user.email}
+                    </h5>
+                    <h5 className="text-small tracking-tight text-default-500">
+                      {getUserRestaurant(user)}
                     </h5>
                     <Link
                       href="#"
@@ -467,8 +621,9 @@ const EditRestaurant = ({ params }: { params: { slug: string } }) => {
   return (
     <>
       {confirmRemovePhone()}
+      {confirmRestaurantDelete()}
       <div className="flex flex-col gap-3">
-        <div className="flex mr-20 ml-20 mt-7 rounded-lg bg-white dark:bg-gray-800 p-7 ">
+        <div className="flex mr-20 ml-20 mt-7 rounded-lg bg-white dark:bg-gray-800 p-7">
           <div className="flex flex-col items-center justify-start">
             <Image
               as={NextImage}
@@ -481,7 +636,7 @@ const EditRestaurant = ({ params }: { params: { slug: string } }) => {
             <div className="flex items-center mt-2">{getRating()}</div>
           </div>
           <div className="justify-between ml-5 w-full lg:block xl:flex 2xl:flex">
-            <div className="flex flex-col items-start justify-start max-w-[200px]">
+            <div className="flex flex-col items-start justify-start max-w-[300px] overflow-x-auto">
               <h1 className="text-sm font-bold text-gray-400">
                 Name:{" "}
                 <span className="text-md text-black dark:text-gray-200">
@@ -536,7 +691,7 @@ const EditRestaurant = ({ params }: { params: { slug: string } }) => {
                 </span>
               </h1>
             </div>
-            <div className="flex flex-col items-start justify-start max-w-[230px]">
+            <div className="flex flex-col items-start justify-start max-w-[300px] overflow-x-auto">
               <h1 className="text-sm font-bold text-gray-400">
                 Address:{" "}
                 <span className="text-md text-black dark:text-gray-200">
@@ -556,6 +711,7 @@ const EditRestaurant = ({ params }: { params: { slug: string } }) => {
                   color="danger"
                   className="text-white"
                   startContent={<i className="bx bxs-trash-alt" />}
+                  onClick={() => deleteRestaurantDisclosure.onOpen()}
                 >
                   حذف
                 </Button>
@@ -563,9 +719,38 @@ const EditRestaurant = ({ params }: { params: { slug: string } }) => {
                   color="success"
                   className="text-white"
                   startContent={<i className="bx bx-save" />}
+                  isLoading={saveButtonLoading}
+                  onClick={() => {
+                    setSaveButtonLoading(true);
+                    saveRestaurant();
+                  }}
                 >
                   حفظ
                 </Button>
+              </div>
+              <div className="flex justify-center items-end">
+                <Button
+                  color="primary"
+                  className="text-white mt-2"
+                  startContent={<i className="bx bx-upload" />}
+                  onClick={() => openFileSelector()}
+                >
+                  رفع صورة
+                </Button>
+              </div>
+              <div className="h-full flex justify-center items-center">
+                <Switch
+                  isSelected={restaurant.status === "active" ? true : false}
+                  color="primary"
+                  onValueChange={(value) =>
+                    changeRestaurantValue(
+                      "status",
+                      value ? "active" : "inactive"
+                    )
+                  }
+                >
+                  تفعيل المطعم
+                </Switch>
               </div>
             </div>
           </div>
@@ -577,6 +762,7 @@ const EditRestaurant = ({ params }: { params: { slug: string } }) => {
               variant="bordered"
               label="الإسم"
               defaultValue={restaurant.name}
+              onValueChange={(value) => changeRestaurantValue("name", value)}
             />
             {chooseOwner()}
           </div>
@@ -587,6 +773,7 @@ const EditRestaurant = ({ params }: { params: { slug: string } }) => {
               variant="bordered"
               label="البريد الإلكتروني"
               defaultValue={restaurant.email}
+              onValueChange={(value) => changeRestaurantValue("email", value)}
             />
           </div>
           <div className="flex gap-3">
@@ -595,6 +782,9 @@ const EditRestaurant = ({ params }: { params: { slug: string } }) => {
               label="ضريبة التوصيل"
               variant="bordered"
               placeholder="0.00"
+              onValueChange={(value) =>
+                changeRestaurantValue("deliveryFee", value)
+              }
               defaultValue={restaurant.deliveryFee}
               startContent={
                 <div className="pointer-events-none flex items-center">
@@ -607,6 +797,18 @@ const EditRestaurant = ({ params }: { params: { slug: string } }) => {
               variant="bordered"
               label="العنوان"
               defaultValue={restaurant.address}
+              onValueChange={(value) => changeRestaurantValue("address", value)}
+            />
+          </div>
+          <div className="mt-10">
+            <Textarea
+              label="الوصف"
+              variant="bordered"
+              placeholder="أدخل وصف المطعم"
+              defaultValue={restaurant.description}
+              onValueChange={(value) =>
+                changeRestaurantValue("description", value)
+              }
             />
           </div>
         </div>
