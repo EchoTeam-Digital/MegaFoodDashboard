@@ -4,8 +4,6 @@
 
 Welcome to the Restaurant and Orders Management Dashboard, a web application designed to streamline the management of restaurants and their orders. This project utilizes Next.js with TypeScript for the frontend and Express backend with Prisma for database interactions.
 
-add a version badge here
-
 [![Version](https://img.shields.io/badge/version-0.0.2-blue.svg)](https://github.com/your-username/restaurant-dashboard/releases/tag/v0.0.2)
 
 
