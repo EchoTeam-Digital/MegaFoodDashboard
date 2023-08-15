@@ -113,4 +113,3 @@ Contributions are welcome! If you find any bugs or want to add new features, ple
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
-```
